@@ -13,8 +13,8 @@ export PATH=/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux/bin:$PATH
 # Get and build u-boot
 git clone git://arago-project.org/git/projects/u-boot-am33x.git || true
 cd u-boot-am33x
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_config
-make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_config
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
 export PATH=$PATH:$(pwd)/tools
 cd ..
 
@@ -22,11 +22,13 @@ cd ..
 mkdir -p linux; cd linux
 wget -c http://software-dl.ti.com/sitara_linux/esd/AM335xSDK/06_00_00_00/exports//ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin
 chmod +x ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin
-./ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin --mode console --prefix $(pwd)
+if [ ! -f setup.sh ]; then
+  ./ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin --mode console --prefix $(pwd)
+fi
 cd board-support/linux-3.2.0-psp04.06.00.11
-if [ ! -f .config ]; then
-  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_defconfig
-  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
+if [ . -nt .config ]; then
+  make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_defconfig
+  make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
 fi
 # Don't forget to disable OCF
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access uImage
