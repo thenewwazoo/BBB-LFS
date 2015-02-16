@@ -22,7 +22,7 @@ cd ..
 mkdir -p linux; cd linux
 wget -c http://software-dl.ti.com/sitara_linux/esd/AM335xSDK/06_00_00_00/exports//ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin
 chmod +x ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin
-./ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin --mode silent --prefix $(pwd)
+./ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin --mode console --prefix $(pwd)
 cd board-support/linux-3.2.0-psp04.06.00.11
 if [ ! -f .config ]; then
   make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_defconfig
