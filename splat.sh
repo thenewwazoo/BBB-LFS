@@ -52,29 +52,16 @@ cd ..
 # Set up the root fs
 cd root_fs/
 mkdir -p dev
-mkdir -p etc
 if [ ! -e dev/console ]; then 
   mknod dev/console c 5 1
 fi
 if [ ! -e dev/null ]; then 
   mknod dev/null c 1 3
 fi
-cat >etc/inittab <<INITTAB
-null::sysinit:/bin/mount -t proc proc /proc
-null::sysinit:/bin/hostname -F /etc/hostname
-null::respawn:/sbin/getty -L ttyO0 115200 vt100
-null::shutdown:/sbin/mount -a -r
-INITTAB
 mkdir -p proc
 mkdir -p root
-cat >etc/passwd <<PASSWD
-root::0:0:root:/root:/bin/sh
-PASSWD
 mkdir -p usr/share/udhcpc
 cp ../busybox/examples/udhcp/simple.script usr/share/udhcpc/default.script
-cat >etc/hostname <<HOSTNAME
-bbb-lfs
-HOSTNAME
 cd ..
 
 # Create SD card image
@@ -115,6 +102,7 @@ cp u-boot-am33x/MLO mnt_boot/
 cp u-boot-am33x/u-boot.img mnt_boot
 cp linux/board-support/linux-3.2.0-psp04.06.00.11/arch/arm/boot/uImage mnt_boot/
 rsync -a root_fs/ mnt_root/
+rsync -a etc mnt_root/
 chown -R root:root mnt_root/
 cat >mnt_boot/uEnv.txt <<UENV
 bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait

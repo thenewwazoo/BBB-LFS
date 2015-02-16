@@ -1,0 +1,4 @@
+null::sysinit:/bin/mount -t proc proc /proc
+null::sysinit:/bin/hostname -F /etc/hostname
+null::respawn:/sbin/getty -L ttyO0 115200 vt100
+null::shutdown:/sbin/mount -a -r
