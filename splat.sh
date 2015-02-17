@@ -30,10 +30,9 @@ wget -c http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=
 wget -c https://www.kernel.org/pub/linux/kernel/projects/rt/3.2/older/patch-3.2-rt10.patch.bz2
 bzip2 -df patch-3.2-rt10.patch.bz2
 patch -p1 -N < patch-3.2-rt10.patch || true
-vi drivers/pwm/pwm.c
-make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- tisdk_am335x-evm_defconfig
-make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
-# Don't forget to disable OCF
+patch -p1 < /vagrant/01-pwm-statement-fix.patch
+cp /vagrant/tisdk_am335x-evm_rt_defconfig arch/arm/configs/
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- tisdk_am335x-evm_rt_defconfig 
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access uImage
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access modules
 

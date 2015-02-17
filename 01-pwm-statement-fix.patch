@@ -1,0 +1,11 @@
+--- a/drivers/pwm/pwm.c	2015-02-17 03:15:52.781684097 +0000
++++ b/drivers/pwm/pwm.c	2015-02-17 04:33:06.297455982 +0000
+@@ -287,7 +287,7 @@
+ 		return -EINVAL;
+
+ 	c.config_mask = BIT(PWM_CONFIG_PERIOD_TICKS),
+-	c.period_ticks = pwm_ns_to_ticks(p, (NSEC_PER_SEC / freq)),
++	c.period_ticks = pwm_ns_to_ticks(p, (NSEC_PER_SEC / freq));
+ 	spin_lock(&p->pwm_lock);
+ 	p->period_ns = NSEC_PER_SEC / freq;
+ 	spin_unlock(&p->pwm_lock);
