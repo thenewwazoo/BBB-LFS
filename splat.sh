@@ -26,10 +26,13 @@ if [ ! -f setup.sh ]; then
   ./ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin --mode console --prefix $(pwd)
 fi
 cd board-support/linux-3.2.0-psp04.06.00.11
-if [ . -nt .config ]; then
-  make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_defconfig
-  make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
-fi
+wget -c http://arago-project.org/git/projects/?p=am33x-cm3.git\;a=blob_plain\;f=bin/am335x-pm-firmware.bin\;hb=HEAD -O firmware/am335x-pm-firmware.bin
+wget -c https://www.kernel.org/pub/linux/kernel/projects/rt/3.2/older/patch-3.2-rt10.patch.bz2
+bzip2 -df patch-3.2-rt10.patch.bz2
+patch -p1 -N < patch-3.2-rt10.patch || true
+vi drivers/pwm/pwm.c
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- tisdk_am335x-evm_defconfig
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
 # Don't forget to disable OCF
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access uImage
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access modules
@@ -102,7 +105,7 @@ cp u-boot-am33x/MLO mnt_boot/
 cp u-boot-am33x/u-boot.img mnt_boot
 cp linux/board-support/linux-3.2.0-psp04.06.00.11/arch/arm/boot/uImage mnt_boot/
 rsync -a root_fs/ mnt_root/
-rsync -a etc mnt_root/
+rsync -a /vagrant/etc mnt_root/
 chown -R root:root mnt_root/
 cat >mnt_boot/uEnv.txt <<UENV
 bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait
