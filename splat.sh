@@ -29,8 +29,8 @@ wget -c http://software-dl.ti.com/sitara_linux/esd/AM335xSDK/latest/exports/am33
 tar zxf am335x-evm-sdk-src-08.00.00.00.tar.gz
 cd board-support/linux-3.14.26-g2489c02/
 patch -p1 < /vagrant/ipipe-core-3.14.26-g2489c02-arm-tiezsdk8.0.patch
-cp /vagrant/xenomai-tiezsdk-defconfig arch/arm/configs/
-make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- xenomai-tiezsdk-defconfig
+cp /vagrant/tiezsdk_xenomai_defconfig arch/arm/configs/
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- tiezsdk_xenomai_defconfig
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOADADDR=0x80008000 uImage
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules dtbs
 
@@ -102,10 +102,11 @@ sudo cp u-boot-am33x/MLO mnt_boot/
 sudo cp u-boot-am33x/u-boot.img mnt_boot
 sudo cp linux/board-support/linux-3.14.26-g2489c02/arch/arm/boot/uImage mnt_boot/
 sudo cp linux/board-support/linux-3.14.26-g2489c02/arch/arm/boot/dts/am335x-boneblack.dtb mnt_boot/
+sudo cp /vagrant/uEnv.txt mnt_boot/
+
 sudo rsync -a root_fs/ mnt_root/
 sudo rsync -a /vagrant/etc mnt_root/
 sudo chown -R root:root mnt_root/
-sudo cp /vagrant/uEnv.txt mnt_boot/
 
 # Close and expose the sdcard image
 sudo umount mnt_root mnt_boot
