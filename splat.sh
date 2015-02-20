@@ -9,6 +9,7 @@ apt-get install -y --force-yes libc6:i386 libstdc++6:i386 libncurses5:i386 zlib1
 wget -c https://releases.linaro.org/14.09/components/toolchain/binaries/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
 tar -C / -xf gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
 export PATH=/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux/bin:$PATH
+export CROSS_COMPILE=arm-linux-gnueabihf-
 
 # Get and build u-boot
 git clone git://arago-project.org/git/projects/u-boot-am33x.git || true
@@ -18,25 +19,24 @@ make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
 export PATH=$PATH:$(pwd)/tools
 cd ..
 
+# Get Xenomai (we need this for the prepare-kernel script)
+wget -c http://download.gna.org/xenomai/stable/latest/xenomai-2.6.4.tar.bz2
+tar xjf xenomai-2.6.4.tar.bz2
+
 # Get and build Linux kernel
 mkdir -p linux; cd linux
-wget -c http://software-dl.ti.com/sitara_linux/esd/AM335xSDK/06_00_00_00/exports//ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin
-chmod +x ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin
-if [ ! -f setup.sh ]; then
-  ./ti-sdk-am335x-evm-06.00.00.00-Linux-x86-Install.bin --mode console --prefix $(pwd)
-fi
-cd board-support/linux-3.2.0-psp04.06.00.11
-if [ . -nt .config ]; then
-  make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- am335x_evm_defconfig
-  make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
-fi
-# Don't forget to disable OCF
-make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access uImage
-make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access modules
+wget -c http://software-dl.ti.com/sitara_linux/esd/AM335xSDK/latest/exports/am335x-evm-sdk-src-08.00.00.00.tar.gz
+tar zxf am335x-evm-sdk-src-08.00.00.00.tar.gz
+cd board-support/linux-3.14.26-g2489c02/
+patch -p1 < /vagrant/ipipe-core-3.14.26-g2489c02-arm-tiezsdk8.0.patch
+cp /vagrant/xenomai-tiezsdk-defconfig arch/arm/configs/
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- xenomai-tiezsdk-defconfig
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOADADDR=0x80008000 uImage
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules dtbs
 
 # Make a root fs spot and start putting things there
 mkdir -p ../../../root_fs/
-make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- EXTRA_CFLAGS=-mno-unaligned-access INSTALL_MOD_PATH=../../../root_fs/ modules_install
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=../../../root_fs/ modules_install
 cd ../../../
 
 # Build busybox
@@ -53,10 +53,10 @@ cd ..
 cd root_fs/
 mkdir -p dev
 if [ ! -e dev/console ]; then 
-  mknod dev/console c 5 1
+  sudo mknod dev/console c 5 1
 fi
 if [ ! -e dev/null ]; then 
-  mknod dev/null c 1 3
+  sudo mknod dev/null c 1 3
 fi
 mkdir -p proc
 mkdir -p root
@@ -87,31 +87,28 @@ w
 FDISK
 
 # Mount the sdcard image
-modprobe loop
-losetup /dev/loop0 sdcard.img
-kpartx -av /dev/loop0
-mkfs.vfat -F 16 -n "lfsboot" /dev/mapper/loop0p1
-mkfs.ext3 -L "lfsroot" /dev/mapper/loop0p2
+sudo modprobe loop
+sudo losetup /dev/loop0 sdcard.img
+sudo kpartx -av /dev/loop0
+sudo mkfs.vfat -F 16 -n "lfsboot" /dev/mapper/loop0p1
+sudo mkfs.ext3 -L "lfsroot" /dev/mapper/loop0p2
 mkdir -p mnt_root
 mkdir -p mnt_boot
-mount /dev/mapper/loop0p1 mnt_boot
-mount /dev/mapper/loop0p2 mnt_root
+sudo mount /dev/mapper/loop0p1 mnt_boot
+sudo mount /dev/mapper/loop0p2 mnt_root
 
 # Populate sdcard image
-cp u-boot-am33x/MLO mnt_boot/
-cp u-boot-am33x/u-boot.img mnt_boot
-cp linux/board-support/linux-3.2.0-psp04.06.00.11/arch/arm/boot/uImage mnt_boot/
-rsync -a root_fs/ mnt_root/
-rsync -a etc mnt_root/
-chown -R root:root mnt_root/
-cat >mnt_boot/uEnv.txt <<UENV
-bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait
-bootcmd=mmc rescan ; fatload mmc 0 81000000 uImage ; bootm 81000000
-uenvcmd=boot
-UENV
+sudo cp u-boot-am33x/MLO mnt_boot/
+sudo cp u-boot-am33x/u-boot.img mnt_boot
+sudo cp linux/board-support/linux-3.14.26-g2489c02/arch/arm/boot/uImage mnt_boot/
+sudo cp linux/board-support/linux-3.14.26-g2489c02/arch/arm/boot/dts/am335x-boneblack.dtb mnt_boot/
+sudo rsync -a root_fs/ mnt_root/
+sudo rsync -a /vagrant/etc mnt_root/
+sudo chown -R root:root mnt_root/
+sudo cp /vagrant/uEnv.txt mnt_boot/
 
 # Close and expose the sdcard image
-umount mnt_root mnt_boot
-kpartx -d /dev/loop0
-losetup -d /dev/loop0
+sudo umount mnt_root mnt_boot
+sudo kpartx -d /dev/loop0
+sudo losetup -d /dev/loop0
 cp sdcard.img /vagrant/

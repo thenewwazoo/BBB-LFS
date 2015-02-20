@@ -1,0 +1,5 @@
+devtree=/am335x-boneblack.dtb
+bootargs=console=ttyO0,115200n8 root=/dev/mmcblk0p2 rw rootfstype=ext3 rootwait
+bootcmd=mmc rescan ; fatload mmc 0 ${loadaddr} uImage ; fatload mmc 0 ${fdtaddr} ${devtree} ; bootm ${loadaddr} - ${fdtaddr}
+uenvcmd=boot
+optargs=consoleblank=0
