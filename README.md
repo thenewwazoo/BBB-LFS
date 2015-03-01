@@ -6,6 +6,7 @@ This is a tiniest-possible-Linux builder for the BeagleBone Black. The final ima
 This intentionally uses the Linux 3.2 kernel that comes with [TI EZSDK 6.0](http://software-dl.ti.com/sitara_linux/esd/AM335xSDK/06_00_00_00/index_FDS.html) because I never had success getting the AM335X's eCAP module properly interrupting in any later kernel.
 
 This repo includes a Vagranfile that I use to provide a predictable build and development environment, but splat.sh doesn't doesn't require being run inside the Vagrant VM. It does assume root privs, though. So beware. My usual workflow is:
+
 1. `vagrant up`
 2. `vagrant ssh`
 3. `sudo bash -xe /vagrant/splat.sh`

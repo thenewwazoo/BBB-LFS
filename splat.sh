@@ -7,8 +7,8 @@ apt-get install -y --force-yes libc6:i386 libstdc++6:i386 libncurses5:i386 zlib1
 
 # Get and install toolchain
 wget -c https://releases.linaro.org/14.09/components/toolchain/binaries/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
-tar -C / -xf gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
-export PATH=/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux/bin:$PATH
+tar -xf gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
+export PATH=$(pwd)/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux/bin:$PATH
 
 # Get and build u-boot
 git clone git://arago-project.org/git/projects/u-boot-am33x.git || true
