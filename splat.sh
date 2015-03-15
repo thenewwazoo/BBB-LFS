@@ -3,7 +3,14 @@
 export DEBIAN_FRONTEND=noninteractive
 dpkg --add-architecture i386
 apt-get update
-apt-get install -y --force-yes libc6:i386 libstdc++6:i386 libncurses5:i386 zlib1g:i386 git libncurses5-dev kpartx
+apt-get install -y --force-yes libc6:i386 \
+                               libstdc++6:i386 \
+                               libncurses5:i386 \
+                               zlib1g:i386 \
+                               git \
+                               libncurses5-dev \
+                               kpartx \
+                               autoconf2.13
 
 # Get and install toolchain
 wget -c https://releases.linaro.org/14.09/components/toolchain/binaries/gcc-linaro-arm-linux-gnueabihf-4.9-2014.09_linux.tar.xz
@@ -19,7 +26,7 @@ make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
 export PATH=$PATH:$(pwd)/tools
 cd ..
 
-# Get Xenomai (we need this for the prepare-kernel script)
+# Get Xenomai upstream for user-space tools
 wget -c http://download.gna.org/xenomai/stable/latest/xenomai-2.6.4.tar.bz2
 tar xjf xenomai-2.6.4.tar.bz2
 
@@ -28,8 +35,10 @@ mkdir -p linux; cd linux
 wget -c http://software-dl.ti.com/sitara_linux/esd/AM335xSDK/latest/exports/am335x-evm-sdk-src-08.00.00.00.tar.gz
 tar zxf am335x-evm-sdk-src-08.00.00.00.tar.gz
 cd board-support/linux-3.14.26-g2489c02/
+wget -c "http://arago-project.org/git/projects/?p=am33x-cm3.git;a=blob_plain;f=bin/am335x-pm-firmware.bin;hb=HEAD" -O firmware/am335x-pm-firmware.bin
 patch -p1 < /vagrant/ipipe-core-3.14.26-g2489c02-arm-tiezsdk8.0.patch
 cp /vagrant/tiezsdk_xenomai_defconfig arch/arm/configs/
+/home/vagrant/xenomai-2.6.4/scripts/prepare-kernel.sh --arch=arm --linux=./
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- tiezsdk_xenomai_defconfig
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- LOADADDR=0x80008000 uImage
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules dtbs
@@ -38,6 +47,15 @@ make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules dtbs
 mkdir -p ../../../root_fs/
 make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=../../../root_fs/ modules_install
 cd ../../../
+
+cd xenomai-2.6.4
+autoconf
+./configure --prefix=$(readlink -f ../root_fs/) --host=arm-linux-gnueabihf 
+# Instead of altering Makefile.am, just brute-force the end result. This gives us static binaries.
+find . -name Makefile -exec sed -ie 's/-lpthread -lrt/-lpthread -lrt -all-static/' {} \;
+make -j4 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
+make install
+cd ..
 
 # Build busybox
 git clone git://busybox.net/busybox.git || true
@@ -62,6 +80,7 @@ mkdir -p proc
 mkdir -p root
 mkdir -p usr/share/udhcpc
 cp ../busybox/examples/udhcp/simple.script usr/share/udhcpc/default.script
+rm -rf share/ # We don't need docs
 cd ..
 
 # Create SD card image
